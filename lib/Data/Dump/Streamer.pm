@@ -35,7 +35,7 @@ $DEBUG=0;
 BEGIN{ $HasPadWalker=eval "use PadWalker 0.99; 1"; }
 
 BEGIN {
-    $VERSION   ='2.39';
+    $VERSION   ='2.40';
     $XS_VERSION = $VERSION;
     $VERSION = eval $VERSION; # used for beta stuff.
     @ISA       = qw(Exporter DynaLoader);
@@ -1187,7 +1187,7 @@ the names to use for the variables being dumped by using PadWalker to
 have a poke around the calling lexical scope to see what is declared. If
 a name for a var can't be found then it will be named according to the
 normal scheme. When PadWalker isn't installed this is just a wrapper for
-L<Dump()|Dump>.
+L<Dump()|/Dump>.
 
 Thanks to Ovid for the idea of this. See L<Data::Dumper::Simple> for a
 similar wrapper around L<Data::Dumper>.
@@ -1243,11 +1243,11 @@ sub DumpLex {
 
 =item DumpVars PAIRS
 
-This is wrapper around L<Dump()|Dump> which expect to receive
+This is wrapper around L<Dump()|/Dump> which expect to receive
 a list of name=>value pairs instead of a list of values.
-Otherwise behaves like L<Dump()|Dump>. Note that names starting
+Otherwise behaves like L<Dump()|/Dump>. Note that names starting
 with a '-' are treated the same as those starting with '*' when
-passed to L<Names()|Names>.
+passed to L<Names()|/Names>.
 
 =cut
 
@@ -2765,6 +2765,9 @@ sub _dump_code {
         #$self->{fh}->print("\n#",join " ",keys %$used,"\n");
 
         #$code=~s/^\s*(\([^)]+\)|)\s*/sub$1\n/;
+
+        $code=~s/(\%\{)(\s*\{\}\s*)/$1;$2/g;
+
         $code="sub".($code=~/^\s*\(/ ? "" : " ").$code;
         if ($self->{style}{indent}) {
             $code=~s/\n/"\n"." " x $indent/meg;
@@ -3709,13 +3712,12 @@ sub _get_lexicals {
 
     my $svo=B::svref_2object($cv);
     my @pl_array = eval { $svo->PADLIST->ARRAY };
-
     my @name_obj = eval { $pl_array[0]->ARRAY };
 
     my %named;
     for my $i ( 0..$#name_obj ) {
         if ( ref($name_obj[$i])!~/SPECIAL/) {
-            $named{$i} = "${ $name_obj[$i]->object_2svref }";
+            $named{$i} = $name_obj[$i]->PV;
         }
     }
 
@@ -3748,7 +3750,7 @@ use B::Deparse;
 our @ISA=qw(B::Deparse);
 my %cache;
 
-our $VERSION = '2.39';
+our $VERSION = '2.40';
 $VERSION= eval $VERSION;
 if ( $VERSION ne $Data::Dump::Streamer::VERSION ) {
     die "Incompatible Data::Dump::Streamer::Deparser v$VERSION vs Data::Dump::Streamer v$Data::Dump::Streamer::VERSION";
